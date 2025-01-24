@@ -1,0 +1,6 @@
+@HospitalLineBot_HostAddress = http://localhost:5135
+
+GET {{HospitalLineBot_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
