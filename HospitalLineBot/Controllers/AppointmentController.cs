@@ -31,5 +31,20 @@ namespace HospitalLineBot.Controllers
 
             return Ok(appointmentDto);
         }
+
+        [HttpGet]
+        [Route("{id}")]
+
+        public async Task<IActionResult> GetById([FromRoute] string id)
+        {
+            var appointmentsDomain = await _appointmentRepository.GetByIdAsync(id);
+
+            if (appointmentsDomain == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(_mapper.Map<List<AppointmentDto>>(appointmentsDomain));
+        }
     }
 }
