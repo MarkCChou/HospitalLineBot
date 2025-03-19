@@ -3,6 +3,7 @@ using HospitalLineBot.Data;
 using HospitalLineBot.Mappings;
 using HospitalLineBot.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 namespace HospitalLineBot
 {
@@ -39,6 +40,19 @@ namespace HospitalLineBot
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
+
+            // Using Files
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider =
+                    new PhysicalFileProvider(Path.Combine(builder.Environment.ContentRootPath, "UploadFiles")),
+                RequestPath = "/UploadFiles",
+
+            });
+            //
+
+
+
 
 
             app.MapControllers();
