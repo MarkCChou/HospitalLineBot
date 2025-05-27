@@ -19,17 +19,18 @@ namespace HospitalLineBot.Controllers
         // 宣告 service
         private readonly LineBotService _lineBotService;
 
-        public LineBotController()
+        public LineBotController(LineBotService lineBotService)
         {
-            _lineBotService = new LineBotService();
+            _lineBotService = lineBotService;
+
         }
 
 
         [HttpPost("webhook")]
 
-        public IActionResult Webhook(WebhookRequestBodyDto body)
+        public async Task<IActionResult> Webhook(WebhookRequestBodyDto body)
         {
-            _lineBotService.ReceiveWebhook(body);
+            await _lineBotService.ReceiveWebhook(body);
             return Ok();
 
         }
@@ -38,6 +39,7 @@ namespace HospitalLineBot.Controllers
         public IActionResult Broadcast([Required] string messageType, object body)
         {
             _lineBotService.BroadcastMessageHandler(messageType, body);
+
             return Ok();
         }
     }

@@ -1,6 +1,7 @@
 
 using HospitalLineBot.Data;
 using HospitalLineBot.Mappings;
+using HospitalLineBot.Models.Domain;
 using HospitalLineBot.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -25,6 +26,7 @@ namespace HospitalLineBot
 
 
             builder.Services.AddScoped<IAppointmentRepository, SQLAppointmentRepository>();
+            builder.Services.AddScoped<LineBotService>();
 
             builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
 

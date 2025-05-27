@@ -3,6 +3,7 @@ using HospitalLineBot.Models.DTOs.Messages;
 using HospitalLineBot.Models.DTOs.Messages.Request;
 using HospitalLineBot.Models.DTOs.Webhook;
 using HospitalLineBot.Providers;
+using HospitalLineBot.Repositories;
 using System.Net.Http.Headers;
 using System.Text;
 
@@ -10,6 +11,8 @@ namespace HospitalLineBot.Models.Domain
 {
     public class LineBotService
     {
+        private readonly IAppointmentRepository _appointmentRepository;
+
         // (將 LineBotController 裡宣告的 ChannelAccessToken & ChannelSecret 移到 LineBotService中)
         // 貼上 messaging api channel 中的 accessToken & secret
         private readonly string channelAccessToken =
@@ -22,27 +25,50 @@ namespace HospitalLineBot.Models.Domain
         private static HttpClient client = new HttpClient(); // 負責處理HttpRequest
         private readonly JsonProvider _jsonProvider = new JsonProvider();
 
-        public LineBotService()
+        public LineBotService(IAppointmentRepository appointmentRepository)
         {
+            _appointmentRepository = appointmentRepository;
         }
 
-        public void ReceiveWebhook(WebhookRequestBodyDto requestBody)
+
+
+        public async Task ReceiveWebhook(WebhookRequestBodyDto requestBody)
         {
             foreach (var eventObject in requestBody.Events)
             {
                 switch (eventObject.Type)
                 {
                     case WebhookEventTypeEnum.Message:
+                        string userMessage = eventObject.Message.Text;
+                        string replyText;
+
+                        if (userMessage.ToLower().Contains("appointment"))
+                        {
+                            var replyAppointment = await _appointmentRepository.GetByIdAsync(eventObject.Source.UserId);
+                            if (replyAppointment == null || !replyAppointment.Any())
+                            {
+                                replyText = "沒有您的門診資訊";
+                            }
+                            else
+                            {
+                                replyText = string.Join("\n",
+                                    replyAppointment.Where(a => a.UserId == eventObject.Source.UserId).Select(a =>
+                                        $"日期: {a.Date:yyyy-MM-dd} ({a.Session})\n醫師: {a.Doctor}\n科別: {a.Clinic}\n地點: {a.Location}\n號碼: {a.Number}\n—"
+                                    ));
+                            }
+                        }
+                        else
+                        {
+                            replyText = $"您好，收到您傳來\"{eventObject.Message.Text}\"!";
+                        }
                         var replyMessage = new ReplyMessageRequestDto<TextMessageDto>()
                         {
                             ReplyToken = eventObject.ReplyToken,
                             Messages = new List<TextMessageDto>
                             {
-                                new TextMessageDto(){Text = $"您好，收到您傳來\"{eventObject.Message.Text}\"!"}
+                                new TextMessageDto(){Text = replyText}
                             }
                         };
-
-
                         ReplyMessageHandler("text", replyMessage);
                         break;
                     case WebhookEventTypeEnum.Unsend:
@@ -86,10 +112,10 @@ namespace HospitalLineBot.Models.Domain
                             ReplyToken = eventObject.ReplyToken,
                             Messages = new List<TextMessageDto>
                             {
-                                new TextMessageDto(){Text = "使用者您好，謝謝您收看鼠鼠影片 !"}
+                                new TextMessageDto(){Text = "使用者您好，謝謝您收看官方影片 !"}
                             }
                         };
-                        ReplyMessageHandler("text", replyMessage);
+                        await ReplyMessageHandler("text", replyMessage);
                         break;
 
                 }
@@ -101,8 +127,8 @@ namespace HospitalLineBot.Models.Domain
         /// <summary>
         /// 接收到廣播請求時，在將請求傳至 Line 前多一層處理，依據收到的 messageType 將 messages 轉換成正確的型別，這樣 Json 轉換時才能正確轉換。
         /// </summary>
-        /// <param name="messageType"></param>
-        /// <param name="requestBody"></param>
+        /// <param name="messageType">Text,Sticker,Image,Video,Audio,Location</param>
+        /// <param name="requestBody">RequestBody</param>
         public void BroadcastMessageHandler(string messageType, object requestBody)
         {
             string strBody = requestBody.ToString();
@@ -125,6 +151,14 @@ namespace HospitalLineBot.Models.Domain
                     messageRequest = _jsonProvider.Deserialize<BroadcastMessageRequestDto<VideoMessageDto>>(strBody);
                     BroadcastMessage(messageRequest);
                     break;
+                case MessageTypeEnum.Audio:
+                    messageRequest = _jsonProvider.Deserialize<BroadcastMessageRequestDto<AudioMessageDto>>(strBody);
+                    BroadcastMessage(messageRequest);
+                    break;
+                case MessageTypeEnum.Location:
+                    messageRequest = _jsonProvider.Deserialize<BroadcastMessageRequestDto<LocationMessageDto>>(strBody);
+                    BroadcastMessage(messageRequest);
+                    break;
 
             }
 
@@ -135,7 +169,7 @@ namespace HospitalLineBot.Models.Domain
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="request"></param>
-        public async void BroadcastMessage<T>(BroadcastMessageRequestDto<T> request)
+        public async Task BroadcastMessage<T>(BroadcastMessageRequestDto<T> request)
         {
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.Authorization =
@@ -158,9 +192,9 @@ namespace HospitalLineBot.Models.Domain
         /// </summary>
         /// <param name="messageType"></param>
         /// <param name="requestBody"></param>
-        public void ReplyMessageHandler<T>(string messageType, ReplyMessageRequestDto<T> requestBody)
+        public async Task ReplyMessageHandler<T>(string messageType, ReplyMessageRequestDto<T> requestBody)
         {
-            ReplyMessage(requestBody);
+            await ReplyMessage(requestBody);
         }
 
         /// <summary>
@@ -168,7 +202,7 @@ namespace HospitalLineBot.Models.Domain
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="request"></param>    
-        public async void ReplyMessage<T>(ReplyMessageRequestDto<T> request)
+        public async Task ReplyMessage<T>(ReplyMessageRequestDto<T> request)
         {
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", channelAccessToken); //帶入 channel access token
