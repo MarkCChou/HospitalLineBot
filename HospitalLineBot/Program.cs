@@ -1,8 +1,8 @@
 
 using HospitalLineBot.Data;
 using HospitalLineBot.Mappings;
-using HospitalLineBot.Models.Domain;
 using HospitalLineBot.Repositories;
+using HospitalLineBot.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 

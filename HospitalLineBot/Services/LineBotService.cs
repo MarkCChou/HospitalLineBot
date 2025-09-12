@@ -7,7 +7,7 @@ using HospitalLineBot.Repositories;
 using System.Net.Http.Headers;
 using System.Text;
 
-namespace HospitalLineBot.Models.Domain
+namespace HospitalLineBot.Services
 {
     public class LineBotService
     {
@@ -15,19 +15,20 @@ namespace HospitalLineBot.Models.Domain
 
         // (將 LineBotController 裡宣告的 ChannelAccessToken & ChannelSecret 移到 LineBotService中)
         // 貼上 messaging api channel 中的 accessToken & secret
-        private readonly string channelAccessToken =
-            "\"uuWiZ/6D9pCpTPNDjxOicp2Z6KVTblplyc/W59vMjhPkozoNRWxajWvkpwYBlr680JAuTkzMNXFiqr2FBKBWkX8uoLGbB9/oim1H5pDrdVb17ZPlhpQktQxdg1mcYAVF/zcScGNq3We9n76TNTLlFgdB04t89/1O/w1cDnyilFU=\"";
+        private readonly string _channelAccessToken;
 
-        private readonly string channelSecret = "0841fbb9777c8b6c6c55b8341ce95f13";
+        private readonly string _channelSecret;
 
         private readonly string replyMessageUri = "https://api.line.me/v2/bot/message/reply";
         private readonly string broadcastMessageUri = "https://api.line.me/v2/bot/message/broadcast";
         private static HttpClient client = new HttpClient(); // 負責處理HttpRequest
         private readonly JsonProvider _jsonProvider = new JsonProvider();
 
-        public LineBotService(IAppointmentRepository appointmentRepository)
+        public LineBotService(IAppointmentRepository appointmentRepository, IConfiguration configuration)
         {
             _appointmentRepository = appointmentRepository;
+            _channelAccessToken = configuration["LineBot:ChannelAccessToken"];
+            _channelSecret = configuration["LineBot:ChannelSecret"];
         }
 
 
@@ -173,7 +174,7 @@ namespace HospitalLineBot.Models.Domain
         {
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", channelAccessToken); //帶入 channel access token
+                new AuthenticationHeaderValue("Bearer", _channelAccessToken); //帶入 channel access token
             var json = _jsonProvider.Serialize(request);
             var requestMessage = new HttpRequestMessage
             {
@@ -205,7 +206,7 @@ namespace HospitalLineBot.Models.Domain
         public async Task ReplyMessage<T>(ReplyMessageRequestDto<T> request)
         {
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", channelAccessToken); //帶入 channel access token
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _channelAccessToken); //帶入 channel access token
             var json = _jsonProvider.Serialize(request);
             var requestMessage = new HttpRequestMessage
             {
