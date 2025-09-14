@@ -1,4 +1,5 @@
 ﻿using HospitalLineBot.Models.Domain;
+using HospitalLineBot.Models.DTOs;
 
 namespace HospitalLineBot.Repositories
 {
@@ -8,6 +9,6 @@ namespace HospitalLineBot.Repositories
 
         Task<List<Appointment?>> GetByIdAsync(string id);
 
-
+        Task<List<HospitalRespDto>> GetHospitalAddress(string hospitalName);
     }
 }
