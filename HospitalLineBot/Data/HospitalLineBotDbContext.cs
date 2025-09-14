@@ -17,7 +17,7 @@ namespace HospitalLineBot.Data
 
         public DbSet<User> Users { get; set; }
 
-        public DbSet<Hospital> Hospitals { get; set; }
+        public DbSet<Hospital> Hospital { get; set; }
 
     }
 

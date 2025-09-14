@@ -26,7 +26,7 @@ namespace HospitalLineBot.Repositories
 
         public async Task<List<HospitalRespDto>> GetHospitalAddress(string hospitalName)
         {
-            return await _dbContext.Hospitals
+            return await _dbContext.Hospital
                 .Where(x => x.Name.Contains(hospitalName))
                 .Select(x => new HospitalRespDto
                 {

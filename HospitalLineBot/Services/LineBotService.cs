@@ -32,7 +32,6 @@ namespace HospitalLineBot.Services
         }
 
 
-
         public async Task ReceiveWebhook(WebhookRequestBodyDto requestBody)
         {
             foreach (var eventObject in requestBody.Events)
@@ -45,6 +44,7 @@ namespace HospitalLineBot.Services
 
                         if (userMessage.ToLower().Contains("appointment"))
                         {
+
                             var replyAppointment = await _appointmentRepository.GetByIdAsync(eventObject.Source.UserId);
                             if (replyAppointment == null || !replyAppointment.Any())
                             {
@@ -62,7 +62,7 @@ namespace HospitalLineBot.Services
                         {
                             try
                             {
-                                var parts = userMessage.Split(':'); // ["地址", "台大醫院"]
+                                var parts = userMessage.Split('+'); // ["地址", "台大醫院"]
 
                                 if (parts.Length > 1)
                                 {
@@ -94,7 +94,7 @@ namespace HospitalLineBot.Services
                         }
                         else
                         {
-                            replyText = $"您好，收到您傳來\"{eventObject.Message.Text}\"!，如果要查詢門診預約資訊，請輸入appointment\n，如果要查詢醫院地址，請輸入地址:[醫院名稱]\n舉例:地址:臺大醫院";
+                            replyText = $"您好，收到您傳來\"{eventObject.Message.Text}\"!" + "，如果要查詢門診預約資訊，請輸入appointment\n" + "，如果要查詢醫院地址，請輸入地址:[醫院名稱]\n" + "舉例:地址+臺大醫院";
                         }
                         var replyMessage = new ReplyMessageRequestDto<TextMessageDto>()
                         {
